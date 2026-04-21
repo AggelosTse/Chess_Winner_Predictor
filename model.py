@@ -1,9 +1,12 @@
 import pandas as pd
-import numpy as np
 from sklearn.preprocessing import LabelEncoder,StandardScaler
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import classification_report,accuracy_score
+from sklearn.model_selection import cross_val_score
+from sklearn.model_selection import GridSearchCV
+
+from sklearn.linear_model import LogisticRegression
 
 chess = pd.read_csv('./data/games.csv')      #open csv file
 
@@ -52,12 +55,74 @@ scaler = StandardScaler()
 x_train_scaled = scaler.fit_transform(x_train)
 x_test_scaled = scaler.transform(x_test)
 
-randomfor_classifier = RandomForestClassifier(n_estimators=100, random_state=42)
-randomfor_classifier.fit(x_train_scaled, y_train)
 
-winner_prediction = randomfor_classifier.predict(x_test_scaled)
+param_grid = {
+    'n_estimators': [100, 200],
+    'max_depth': [10, 12, 15],
+    'min_samples_split': [2, 5]
+}
 
-print(f"accuracy: {accuracy_score(y_test,winner_prediction)}")
 
-print(chess_clean.head(10))
+#initialize grid search
+grid_search = GridSearchCV(
+    RandomForestClassifier(random_state=42 , class_weight='balanced'), 
+    param_grid, 
+    cv=3,           
+    n_jobs=-1, 
+    verbose=2
+)
 
+#search on training data 
+grid_search.fit(x_train_scaled, y_train)
+
+#get best model found by grid search
+best_rf = grid_search.best_estimator_
+print(f"Best Parameters: {grid_search.best_params_}")
+
+# mean accuracy of the best model
+winner_prediction = best_rf.predict(x_test_scaled)
+print(f"Final Accuracy: {accuracy_score(y_test, winner_prediction)}")
+
+print(classification_report(y_test, winner_prediction))
+
+# Stability and Overfitting for Random Forest (Section 1.6)
+best_index_rf = grid_search.best_index_
+cv_std_rf = grid_search.cv_results_['std_test_score'][best_index_rf]
+
+print(f"Mean CV Accuracy: {grid_search.best_score_:.4f}")
+print(f"CV Standard Deviation (Stability): {cv_std_rf:.4f}")
+print(f"Train Accuracy: {best_rf.score(x_train_scaled, y_train):.4f}")
+print(f"Test Accuracy: {best_rf.score(x_test_scaled, y_test):.4f}")
+
+
+
+#LOGISTIC REGRESSION
+
+logistic = LogisticRegression(solver='saga', max_iter=5000, class_weight='balanced')
+
+logistic.fit(x_train_scaled,y_train)
+
+param_grid_lr = {
+    'C': [0.1, 1.0, 10.0],
+    'penalty': ['l1', 'l2'] 
+}
+
+grid_logistic = GridSearchCV(logistic, param_grid_lr, cv=3, n_jobs=-1, verbose=1)
+grid_logistic.fit(x_train_scaled, y_train)
+
+#find best model with grid search
+best_logistic = grid_logistic.best_estimator_
+
+y_pred_logistic = best_logistic.predict(x_test_scaled)
+
+print("\n--- Logistic Regression Classification Report ---")
+print(classification_report(y_test, y_pred_logistic))
+
+# stability, overfitting
+best_index_logistic = grid_logistic.best_index_
+cv_std_lr = grid_logistic.cv_results_['std_test_score'][best_index_logistic]
+
+print(f"Mean CV Accuracy: {grid_logistic.best_score_:.4f}")
+print(f"CV Standard Deviation (Stability): {cv_std_lr:.4f}")
+print(f"Train Accuracy: {best_logistic.score(x_train_scaled, y_train):.4f}")
+print(f"Test Accuracy: {best_logistic.score(x_test_scaled, y_test):.4f}")
