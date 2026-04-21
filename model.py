@@ -8,6 +8,8 @@ from sklearn.model_selection import GridSearchCV
 
 from sklearn.linear_model import LogisticRegression
 
+from sklearn.svm import SVC
+
 chess = pd.read_csv('./data/games.csv')      #open csv file
 
 
@@ -126,3 +128,6 @@ print(f"Mean CV Accuracy: {grid_logistic.best_score_:.4f}")
 print(f"CV Standard Deviation (Stability): {cv_std_lr:.4f}")
 print(f"Train Accuracy: {best_logistic.score(x_train_scaled, y_train):.4f}")
 print(f"Test Accuracy: {best_logistic.score(x_test_scaled, y_test):.4f}")
+
+
+#
