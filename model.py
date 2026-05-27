@@ -12,6 +12,8 @@ from sklearn.svm import SVC
 
 chess = pd.read_csv('./data/games.csv')      #open csv file
 
+#drop draws
+chess = chess[chess['winner'] != 'draw'].copy()
 
 #add new column with the difference of 2 player's elo
 chess["rating_diff"] = chess["white_rating"] - chess["black_rating"]
@@ -33,30 +35,30 @@ chess_clean = chess_clean[['white_rating', 'black_rating', 'rated','base_value',
 #drops the whole row if it finds a null 
 chess_clean = chess_clean.dropna() 
 
-#object to encode data
-label_encoder = LabelEncoder()
-
 #encode the non numeric columns
+label_encoder = LabelEncoder()
 columns = ['rated','opening_eco']
 
 for col in columns:
     chess_clean[col] = label_encoder.fit_transform(chess_clean[col])
     
-#encode target variable
-chess_clean['winner'] = label_encoder.fit_transform(chess_clean['winner'])
+    
+#encode target variable for binary classification
+chess_clean['winner'] = chess_clean['winner'].map({'white': 0, 'black': 1})
 
-
+#train test split
 y=chess_clean["winner"]
 x=chess_clean.drop("winner", axis=1)
 
 x_train,x_test,y_train,y_test = train_test_split(x,y,test_size=0.2,random_state=42)
 
-
+#scaling variables
 scaler = StandardScaler()
-
 x_train_scaled = scaler.fit_transform(x_train)
 x_test_scaled = scaler.transform(x_test)
 
+
+#RANDOM FOREST CLASSIFIER 
 
 param_grid = {
     'n_estimators': [100, 200],
@@ -64,14 +66,13 @@ param_grid = {
     'min_samples_split': [2, 5]
 }
 
-
 #initialize grid search
 grid_search = GridSearchCV(
-    RandomForestClassifier(random_state=42 , class_weight='balanced'), 
+    RandomForestClassifier(random_state=42), 
     param_grid, 
     cv=3,           
     n_jobs=-1, 
-    verbose=2
+    verbose=1
 )
 
 #search on training data 
@@ -100,9 +101,7 @@ print(f"Test Accuracy: {best_rf.score(x_test_scaled, y_test):.4f}")
 
 #LOGISTIC REGRESSION
 
-logistic = LogisticRegression(solver='saga', max_iter=5000, class_weight='balanced')
-
-logistic.fit(x_train_scaled,y_train)
+logistic = LogisticRegression(solver='saga', max_iter=5000, random_state=42)
 
 param_grid_lr = {
     'C': [0.1, 1.0, 10.0],
@@ -130,4 +129,29 @@ print(f"Train Accuracy: {best_logistic.score(x_train_scaled, y_train):.4f}")
 print(f"Test Accuracy: {best_logistic.score(x_test_scaled, y_test):.4f}")
 
 
-#
+#SUPPORT VECTOR MACHINE
+
+svm = SVC(random_state=42)
+
+param_grid_svm = {
+    'C': [0.1, 1.0, 10.0],
+    'kernel': ['rbf']
+}
+
+grid_svm = GridSearchCV(svm, param_grid_svm, cv=3, n_jobs=-1, verbose=1)
+grid_svm.fit(x_train_scaled, y_train)
+
+best_svm = grid_svm.best_estimator_
+y_pred_svm = best_svm.predict(x_test_scaled)
+
+print("\n--- SVM Classification Report ---")
+print(classification_report(y_test, y_pred_svm))
+
+best_index_svm = grid_svm.best_index_
+cv_std_svm = grid_svm.cv_results_['std_test_score'][best_index_svm]
+
+print(f"Best Parameters: {grid_svm.best_params_}")
+print(f"Mean CV Accuracy: {grid_svm.best_score_:.4f}")
+print(f"CV Standard Deviation (Stability): {cv_std_svm:.4f}")
+print(f"Train Accuracy: {best_svm.score(x_train_scaled, y_train):.4f}")
+print(f"Test Accuracy: {best_svm.score(x_test_scaled, y_test):.4f}")
