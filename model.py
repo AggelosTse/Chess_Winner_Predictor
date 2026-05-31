@@ -2,12 +2,10 @@ import pandas as pd
 from sklearn.preprocessing import LabelEncoder,StandardScaler
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import classification_report,accuracy_score
-from sklearn.model_selection import cross_val_score
+from sklearn.metrics import classification_report
 from sklearn.model_selection import GridSearchCV
-
+from sklearn.metrics import confusion_matrix, roc_auc_score
 from sklearn.linear_model import LogisticRegression
-
 from sklearn.svm import SVC
 
 chess = pd.read_csv('./data/games.csv')      #open csv file
@@ -23,14 +21,8 @@ splitted = chess['increment_code'].str.split('+', expand=True)
 chess['base_value'] = splitted[0].astype(int)
 chess['increment_value'] = splitted[1].astype(int)
 
-
-#remove not used columns
-chess_clean = chess.drop(columns=["id","white_id","black_id","created_at","last_move_at","moves","victory_status","turns","opening_name",'increment_code'])
-
-
-
 #reorder important columns
-chess_clean = chess_clean[['white_rating', 'black_rating', 'rated','base_value','increment_value','opening_eco','opening_ply','rating_diff','winner']]
+chess_clean = chess[['white_rating', 'black_rating', 'rated','base_value','increment_value','opening_eco','opening_ply','rating_diff','winner']]
 
 #drops the whole row if it finds a null 
 chess_clean = chess_clean.dropna() 
@@ -42,7 +34,11 @@ columns = ['rated','opening_eco']
 for col in columns:
     chess_clean[col] = label_encoder.fit_transform(chess_clean[col])
     
-    
+print("Raw Class Counts")
+print(chess_clean['winner'].value_counts())
+print("Class Percentages")
+print(chess_clean['winner'].value_counts(normalize=True) * 100)
+
 #encode target variable for binary classification
 chess_clean['winner'] = chess_clean['winner'].map({'white': 0, 'black': 1})
 
@@ -50,7 +46,7 @@ chess_clean['winner'] = chess_clean['winner'].map({'white': 0, 'black': 1})
 y=chess_clean["winner"]
 x=chess_clean.drop("winner", axis=1)
 
-x_train,x_test,y_train,y_test = train_test_split(x,y,test_size=0.2,random_state=42)
+x_train,x_test,y_train,y_test = train_test_split(x,y,test_size=0.2,random_state=42,stratify=y)
 
 #scaling variables
 scaler = StandardScaler()
@@ -60,7 +56,7 @@ x_test_scaled = scaler.transform(x_test)
 
 #RANDOM FOREST CLASSIFIER 
 
-param_grid = {
+param_grid_randomForest = {
     'n_estimators': [100, 200],
     'max_depth': [10, 12, 15],
     'min_samples_split': [2, 5]
@@ -69,7 +65,7 @@ param_grid = {
 #initialize grid search
 grid_search = GridSearchCV(
     RandomForestClassifier(random_state=42), 
-    param_grid, 
+    param_grid_randomForest, 
     cv=3,           
     n_jobs=-1, 
     verbose=1
@@ -79,79 +75,87 @@ grid_search = GridSearchCV(
 grid_search.fit(x_train_scaled, y_train)
 
 #get best model found by grid search
-best_rf = grid_search.best_estimator_
-print(f"Best Parameters: {grid_search.best_params_}")
+best_randomforest = grid_search.best_estimator_
+
 
 # mean accuracy of the best model
-winner_prediction = best_rf.predict(x_test_scaled)
-print(f"Final Accuracy: {accuracy_score(y_test, winner_prediction)}")
+winner_prediction = best_randomforest.predict(x_test_scaled)
+randomforest_probability = best_randomforest.predict_proba(x_test_scaled)[:, 1]
 
+
+print(f"Best Parameters: {grid_search.best_params_}")
+
+print("Random Forest Report")
 print(classification_report(y_test, winner_prediction))
 
-# Stability and Overfitting for Random Forest (Section 1.6)
-best_index_rf = grid_search.best_index_
-cv_std_rf = grid_search.cv_results_['std_test_score'][best_index_rf]
+print(f"mean CV accuracy: {grid_search.best_score_:.4f}")
+print(f"Train Accuracy: {best_randomforest.score(x_train_scaled, y_train):.4f}")
+print(f"Test Accuracy: {best_randomforest.score(x_test_scaled, y_test):.4f}")
 
-print(f"Mean CV Accuracy: {grid_search.best_score_:.4f}")
-print(f"CV Standard Deviation (Stability): {cv_std_rf:.4f}")
-print(f"Train Accuracy: {best_rf.score(x_train_scaled, y_train):.4f}")
-print(f"Test Accuracy: {best_rf.score(x_test_scaled, y_test):.4f}")
+print("Confusion Matrix:")
+print(confusion_matrix(y_test, winner_prediction))
 
-
+print(f"ROC-AUC Score: {roc_auc_score(y_test, randomforest_probability):.4f}")
 
 #LOGISTIC REGRESSION
 
 logistic = LogisticRegression(solver='saga', max_iter=5000, random_state=42)
 
-param_grid_lr = {
+param_grid_logisticRegression = {
     'C': [0.1, 1.0, 10.0],
     'penalty': ['l1', 'l2'] 
 }
 
-grid_logistic = GridSearchCV(logistic, param_grid_lr, cv=3, n_jobs=-1, verbose=1)
-grid_logistic.fit(x_train_scaled, y_train)
+grid_logisticRegression = GridSearchCV(logistic, param_grid_logisticRegression, cv=3, n_jobs=-1, verbose=1)
+grid_logisticRegression.fit(x_train_scaled, y_train)
 
 #find best model with grid search
-best_logistic = grid_logistic.best_estimator_
+best_logisticRegression = grid_logisticRegression.best_estimator_
 
-y_pred_logistic = best_logistic.predict(x_test_scaled)
+winner_prediction = best_logisticRegression.predict(x_test_scaled)
+logisticRegression_probability = best_logisticRegression.predict_proba(x_test_scaled)[:, 1]
 
-print("\n--- Logistic Regression Classification Report ---")
-print(classification_report(y_test, y_pred_logistic))
 
-# stability, overfitting
-best_index_logistic = grid_logistic.best_index_
-cv_std_lr = grid_logistic.cv_results_['std_test_score'][best_index_logistic]
+print(f"Best Parameters: {grid_logisticRegression.best_params_}")
+print("\nLogistic Regression Report")
+print(classification_report(y_test, winner_prediction))
 
-print(f"Mean CV Accuracy: {grid_logistic.best_score_:.4f}")
-print(f"CV Standard Deviation (Stability): {cv_std_lr:.4f}")
-print(f"Train Accuracy: {best_logistic.score(x_train_scaled, y_train):.4f}")
-print(f"Test Accuracy: {best_logistic.score(x_test_scaled, y_test):.4f}")
+print(f"Mean CV Accuracy: {grid_logisticRegression.best_score_:.4f}")
+print(f"Train Accuracy: {best_logisticRegression.score(x_train_scaled, y_train):.4f}")
+print(f"Test Accuracy: {best_logisticRegression.score(x_test_scaled, y_test):.4f}")
 
+print("Confusion Matrix:")
+print(confusion_matrix(y_test, winner_prediction))
+
+print(f"ROC-AUC Score: {roc_auc_score(y_test, logisticRegression_probability):.4f}")
 
 #SUPPORT VECTOR MACHINE
 
-svm = SVC(random_state=42)
+supportVectorMachine = SVC(probability=True,random_state=42)
 
-param_grid_svm = {
+param_grid_supportVectorMachine = {
     'C': [0.1, 1.0, 10.0],
     'kernel': ['rbf']
 }
 
-grid_svm = GridSearchCV(svm, param_grid_svm, cv=3, n_jobs=-1, verbose=1)
-grid_svm.fit(x_train_scaled, y_train)
+grid_supportVectorMachine = GridSearchCV(supportVectorMachine, param_grid_supportVectorMachine, cv=3, n_jobs=-1, verbose=1)
+grid_supportVectorMachine.fit(x_train_scaled, y_train)
 
-best_svm = grid_svm.best_estimator_
-y_pred_svm = best_svm.predict(x_test_scaled)
+best_supportVectorMachine = grid_supportVectorMachine.best_estimator_
 
-print("\n--- SVM Classification Report ---")
-print(classification_report(y_test, y_pred_svm))
+winner_prediction = best_supportVectorMachine.predict(x_test_scaled)
 
-best_index_svm = grid_svm.best_index_
-cv_std_svm = grid_svm.cv_results_['std_test_score'][best_index_svm]
+supportVectorMachine_probability = best_supportVectorMachine.predict_proba(x_test_scaled)[:, 1]
 
-print(f"Best Parameters: {grid_svm.best_params_}")
-print(f"Mean CV Accuracy: {grid_svm.best_score_:.4f}")
-print(f"CV Standard Deviation (Stability): {cv_std_svm:.4f}")
-print(f"Train Accuracy: {best_svm.score(x_train_scaled, y_train):.4f}")
-print(f"Test Accuracy: {best_svm.score(x_test_scaled, y_test):.4f}")
+print(f"Best Parameters: {grid_supportVectorMachine.best_params_}")
+print("\nSVM Report")
+print(classification_report(y_test, winner_prediction))
+
+print(f"Mean CV Accuracy: {grid_supportVectorMachine.best_score_:.4f}")
+print(f"Train Accuracy: {best_supportVectorMachine.score(x_train_scaled, y_train):.4f}")
+print(f"Test Accuracy: {best_supportVectorMachine.score(x_test_scaled, y_test):.4f}")
+
+print("Confusion Matrix:")
+print(confusion_matrix(y_test, winner_prediction))
+
+print(f"ROC-AUC Score: {roc_auc_score(y_test, supportVectorMachine_probability):.4f}")
