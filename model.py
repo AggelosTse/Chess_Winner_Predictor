@@ -82,6 +82,11 @@ best_randomforest = grid_search.best_estimator_
 winner_prediction = best_randomforest.predict(x_test_scaled)
 randomforest_probability = best_randomforest.predict_proba(x_test_scaled)[:, 1]
 
+#for standard deviation
+best_index_randomForest = grid_search.best_index_
+
+confusion_matrix(y_test, winner_prediction)
+
 
 print(f"Best Parameters: {grid_search.best_params_}")
 
@@ -91,9 +96,8 @@ print(classification_report(y_test, winner_prediction))
 print(f"mean CV accuracy: {grid_search.best_score_:.4f}")
 print(f"Train Accuracy: {best_randomforest.score(x_train_scaled, y_train):.4f}")
 print(f"Test Accuracy: {best_randomforest.score(x_test_scaled, y_test):.4f}")
+print(f"Standard Deviation (Τυπική Απόκλιση): {grid_search.cv_results_['std_test_score'][best_index_randomForest]:.4f}")
 
-print("Confusion Matrix:")
-print(confusion_matrix(y_test, winner_prediction))
 
 print(f"ROC-AUC Score: {roc_auc_score(y_test, randomforest_probability):.4f}")
 
@@ -115,6 +119,9 @@ best_logisticRegression = grid_logisticRegression.best_estimator_
 winner_prediction = best_logisticRegression.predict(x_test_scaled)
 logisticRegression_probability = best_logisticRegression.predict_proba(x_test_scaled)[:, 1]
 
+best_index_logisticRegression = grid_logisticRegression.best_index_
+
+confusion_matrix(y_test, winner_prediction)
 
 print(f"Best Parameters: {grid_logisticRegression.best_params_}")
 print("\nLogistic Regression Report")
@@ -123,9 +130,7 @@ print(classification_report(y_test, winner_prediction))
 print(f"Mean CV Accuracy: {grid_logisticRegression.best_score_:.4f}")
 print(f"Train Accuracy: {best_logisticRegression.score(x_train_scaled, y_train):.4f}")
 print(f"Test Accuracy: {best_logisticRegression.score(x_test_scaled, y_test):.4f}")
-
-print("Confusion Matrix:")
-print(confusion_matrix(y_test, winner_prediction))
+print(f"Standard Deviation (Τυπική Απόκλιση): {grid_logisticRegression.cv_results_['std_test_score'][best_index_logisticRegression]:.4f}")
 
 print(f"ROC-AUC Score: {roc_auc_score(y_test, logisticRegression_probability):.4f}")
 
@@ -147,6 +152,10 @@ winner_prediction = best_supportVectorMachine.predict(x_test_scaled)
 
 supportVectorMachine_probability = best_supportVectorMachine.predict_proba(x_test_scaled)[:, 1]
 
+best_index_supportVectorMachine = grid_supportVectorMachine.best_index_
+
+confusion_matrix(y_test, winner_prediction)
+
 print(f"Best Parameters: {grid_supportVectorMachine.best_params_}")
 print("\nSVM Report")
 print(classification_report(y_test, winner_prediction))
@@ -154,8 +163,6 @@ print(classification_report(y_test, winner_prediction))
 print(f"Mean CV Accuracy: {grid_supportVectorMachine.best_score_:.4f}")
 print(f"Train Accuracy: {best_supportVectorMachine.score(x_train_scaled, y_train):.4f}")
 print(f"Test Accuracy: {best_supportVectorMachine.score(x_test_scaled, y_test):.4f}")
-
-print("Confusion Matrix:")
-print(confusion_matrix(y_test, winner_prediction))
+print(f"Standard Deviation (Τυπική Απόκλιση): {grid_supportVectorMachine.cv_results_['std_test_score'][best_index_supportVectorMachine]:.4f}")
 
 print(f"ROC-AUC Score: {roc_auc_score(y_test, supportVectorMachine_probability):.4f}")
