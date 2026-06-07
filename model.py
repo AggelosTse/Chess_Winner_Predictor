@@ -12,7 +12,7 @@ from sklearn.metrics import ConfusionMatrixDisplay
 
 chess = pd.read_csv("./data/games.csv")  # open csv file
 
-# drop draws
+# drop draws 
 chess = chess[chess["winner"] != "draw"].copy()
 
 # add new column with the difference of 2 player's elo
