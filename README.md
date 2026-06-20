@@ -33,7 +33,7 @@ To ensure optimal performance and prevent data leakage, the pipeline applies sev
 ## Installation & Usage
 1. **Navigate to the project root folder:**
     ```bash
-       cd Chess_Winner_Predictor
+      cd Chess_Winner_Predictor
     ```
 2. **Download python packages:**
      ```bash
