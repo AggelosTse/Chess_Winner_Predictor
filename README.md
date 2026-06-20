@@ -6,7 +6,7 @@ This repository contains a machine learning pipeline written in Python to predic
 ## Dataset & Feature Engineering
 The pipeline utilizes chess game metadata (`games.csv`).
 
-### Selected Features Matrix
+## Selected Features Matrix
 The model trains on the following final feature subset:
 * `white_rating`, `black_rating`, `rating_diff` (Player Skill Data)
 * `rated` (Whether the match affects official rankings)
@@ -18,7 +18,7 @@ Target Variable ($y$)
     * `0`: White Wins
     * `1`: Black Wins
  
-#### Data Preprocessing
+## Data Preprocessing
 
 To ensure optimal performance and prevent data leakage, the pipeline applies several preprocessing steps:
 
@@ -30,7 +30,7 @@ To ensure optimal performance and prevent data leakage, the pipeline applies sev
 4.  **Dataset Splitting**: The dataset is split into an **80% Training set** and a **20% Testing set**, stratified according to the target variable to ensure proportional class distribution.
 5.  **Feature Scaling**: Numeric columns are normalized using `StandardScaler` fitted *only* on the training data.
 
-##### Installation & Usage
+## Installation & Usage
 1. **Navigate to the project root folder:**
     ```bash
        cd Chess_Winner_Predictor
