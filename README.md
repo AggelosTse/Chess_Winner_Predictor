@@ -35,7 +35,7 @@ To ensure optimal performance and prevent data leakage, the pipeline applies sev
     ```bash
        cd Chess_Winner_Predictor
     ```
-2.   **Download python packages:**
+2. **Download python packages:**
      ```bash
        pip install -r requirements.txt
      ```
