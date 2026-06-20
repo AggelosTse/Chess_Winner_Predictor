@@ -1,9 +1,7 @@
 # Chess Game Winner Prediction
 
-This repository contains a machine learning pipeline written in Python to predict the outcome of a chess match (White wins vs. Black wins) using data from played games. It evaluates and compares three popular classification algorithms: 
-**1. Random Forest** 
-**2. Logistic Regression** 
-**3. Support Vector Machines (SVM)**
+This repository contains a machine learning pipeline written in Python to predict the outcome of a chess match (White wins vs. Black wins) using data from played games. It evaluates and compares three popular classification algorithms: **Random Forest** 
+,**Logistic Regression**,**Support Vector Machines (SVM)**
 
 ## Dataset & Feature Engineering
 The pipeline utilizes chess game metadata (`games.csv`).
@@ -37,7 +35,7 @@ To ensure optimal performance and prevent data leakage, the pipeline applies sev
     ```bash
        cd Chess_Winner_Predictor
     ```
-   **Download python packages:**
+2.   **Download python packages:**
      ```bash
        pip install -r requirements.txt
      ```
