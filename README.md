@@ -15,7 +15,7 @@ The model trains on the following final feature subset:
 * `base_value`, `increment_value` (Time Control Controls)
 * `opening_eco`, `opening_ply` (Opening Theory Data)
 
-### Target Variable ($y$)
+Target Variable ($y$)
 * **`winner`**: Binary classification target mapped as:
     * `0`: White Wins
     * `1`: Black Wins
@@ -37,11 +37,11 @@ To ensure optimal performance and prevent data leakage, the pipeline applies sev
     ```bash
        cd Chess_Winner_Predictor
     ```
-2. download python packages:
+   **Download python packages:**
      ```bash
        pip install -r requirements.txt
      ```
-3. execute the script:
+3. **Execute the script:**
      ```bash
        python3 model.py
      ```
